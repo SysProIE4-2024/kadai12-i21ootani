@@ -94,7 +94,8 @@ void externalCom(char *args[]) {                // 外部コマンドを実行�
   if (pid==0) {                                 //   子プロセスなら
     if (ifile != NULL) {
       redirect(0, ifile, O_RDONLY);
-    } else if (ofile != NULL) {
+    }
+    if (ofile != NULL) {
       redirect(1, ofile, O_WRONLY|O_TRUNC|O_CREAT);
     }
     execvp(args[0], args);                      //     コマンドを実行
@@ -165,6 +166,9 @@ Command: cat < aaa.txt <- 入力リダイレクト
 aaa bbb
 Command: echo aaa > aaa.txt    <- 出力リダイレクトでファイルを上書き
 Command: cat < aaa.txt         <- テキストファイルが上書きされているか確認
+aaa
+Command: cat < aaa.txt > bbb.txt  <- 出力リダイレクトと入力リダイレクトを同時に使用
+Command: cat < bbb.txt <- テキストファイルが作成されているか確認
 aaa
 Command: chmod 000 aaa.txt     <- ファイルの保護モードの変更
 Command: echo aaa bbb > aaa.txt  <- 出力リダイレクト
