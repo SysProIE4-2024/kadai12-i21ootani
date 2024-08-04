@@ -77,6 +77,12 @@ void redirect(int fd, char *path, int flag) {   // リダイレクト処理を�
   //        入力の場合 O_RDONLY
   //        出力の場合 O_WRONLY|O_TRUNC|O_CREAT
   //
+  close(fd);
+  int fd1 = open(path, flag, 0644);
+  if (fd1 < 0) {
+    perror(path);
+    exit(1);
+  }
 }
 
 void externalCom(char *args[]) {                // 外部コマンドを実行する
@@ -86,6 +92,12 @@ void externalCom(char *args[]) {                // 外部コマンドを実行�
     exit(1);                                    //     非常事態，親を終了
   }
   if (pid==0) {                                 //   子プロセスなら
+    if (ifile != NULL) {
+      redirect(0, ifile, O_RDONLY);
+    }
+    if (ofile != NULL) {
+      redirect(1, ofile, O_WRONLY|O_TRUNC|O_CREAT);
+    }
     execvp(args[0], args);                      //     コマンドを実行
     perror(args[0]);
     exit(1);
@@ -130,3 +142,38 @@ int main() {
   return 0;
 }
 
+/* 実行例
+% make                 <- エラーも警告も出ない
+cc -D_GNU_SOURCE -Wall -std=c99 -o myshell myshell.c
+% ./myshell            <- myshellの実行
+Command: ls            <- 外部コマンドの実行
+Makefile        README.md       README.pdf      myshell         myshell.c
+Command: cd ..         <- 内部コマンドの実行
+Command: ls            <- cdコマンドが実行できているか確認
+kadai00-i21ootani       kadai05-i21ootani       kadai10-i21ootani
+kadai01-i21ootani       kadai06-i21ootani       kadai11-i21ootani
+kadai02-i21ootani       kadai07-i21ootani       kadai12-i21ootani
+kadai03-i21ootani       kadai08-i21ootani
+kadai04-i21ootani       kadai09-i21ootani
+Command: cd kadai12-i21ootani  <- 元のディレクトリに戻る
+Command: ls            <- cdコマンドが実行できているか確認
+Makefile        README.md       README.pdf      myshell         myshell.c
+Command: echo aaa bbb > aaa.txt  <- 出力リダイレクト
+Command: ls            <- テキストファイルが作成されているか確認
+Makefile        README.pdf      myshell
+README.md       aaa.txt         myshell.c
+Command: cat < aaa.txt <- 入力リダイレクト
+aaa bbb
+Command: echo aaa > aaa.txt    <- 出力リダイレクトでファイルを上書き
+Command: cat < aaa.txt         <- テキストファイルが上書きされているか確認
+aaa
+Command: cat < aaa.txt > bbb.txt  <- 出力リダイレクトと入力リダイレクトを同時に使用
+Command: cat < bbb.txt <- テキストファイルが作成されているか確認
+aaa
+Command: chmod 000 aaa.txt     <- ファイルの保護モードの変更
+Command: echo aaa bbb > aaa.txt  <- 出力リダイレクト
+aaa.txt: Permission denied     <- ファイルの書込み権がないためエラー
+Command: cat < aaa.txt         <- 入力リダイレクト
+aaa.txt: Permission denied     <- ファイルの読出し権がないためエラー
+Command: ^D            <- 終了
+*/
